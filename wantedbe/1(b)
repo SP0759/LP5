@@ -1,0 +1,79 @@
+for running in terminal:
+pwd
+cd Desktop/
+touch in.cpp
+g++ -o in in.cpp
+./in
+
+
+#include <iostream>
+#include <vector>
+#include <stack>
+#include <omp.h> // Include OpenMP header
+using namespace std;
+
+const int MAX = 100000;
+vector<int> graph[MAX];
+bool visited[MAX];
+
+void dfs(int node) {
+    stack<int> s;
+    s.push(node);
+    while (!s.empty()) {
+        int curr_node = s.top();
+        s.pop();
+        if (!visited[curr_node]) {
+            visited[curr_node] = true;
+            #pragma omp parallel for // Parallelize this loop
+            for (int i = 0; i < graph[curr_node].size(); i++) {
+                int adj_node = graph[curr_node][i];
+                if (!visited[adj_node]) {
+                    s.push(adj_node);
+                }
+            }
+        }
+    }
+}
+
+int main() {
+    int n, m, start_node;
+    cin >> n >> m >> start_node;
+
+    for (int i = 0; i < m; i++) {
+        int u, v;
+        cin >> u >> v;
+        graph[u].push_back(v);
+        graph[v].push_back(u);
+    }
+
+    for (int i = 1; i <= n; i++) { // Start DFS from every node
+        if (!visited[i]) {
+            dfs(i);
+        }
+    }
+
+    #pragma omp parallel for // Parallelize this loop
+    for (int i = 1; i <= n; i++) {
+        if (visited[i]) {
+            #pragma omp critical
+            cout << i << " ";
+        }
+    }
+    return 0;
+}
+
+
+
+
+output input:
+5 4 0
+1 2
+0 3
+0 5
+0 6
+0 3 
+0   1
+0   2 
+1   3
+1   4
+0   1  2  3  4

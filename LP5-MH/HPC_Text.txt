@@ -1,0 +1,378 @@
+HPC Lab Assignment No. 01(a)
+—----------------------------------------------------------------------------------------------------------------------------
+Code:
+
+#include <iostream> 
+#include <queue> 
+
+using namespace std; 
+
+class node 
+{ 
+public: 
+    node *left, *right; 
+    int data; 
+}; 
+
+node *insert(node *root, int data) 
+{ 
+    if (!root) 
+    { 
+        root = new node; 
+        root->left = NULL; 
+        root->right = NULL; 
+        root->data = data; 
+        return root; 
+    } 
+    queue<node *> q; 
+    q.push(root); 
+
+    while (!q.empty()) 
+    { 
+        node *temp = q.front(); 
+        q.pop(); 
+
+        if (temp->left == NULL) 
+        { 
+            temp->left = new node; 
+            temp->left->left = NULL; 
+            temp->left->right = NULL; 
+            temp->left->data = data; 
+            return root; 
+        } 
+        else 
+        { 
+            q.push(temp->left); 
+        } 
+        if (temp->right == NULL) 
+        { 
+            temp->right = new node; 
+            temp->right->left = NULL; 
+            temp->right->right = NULL; 
+            temp->right->data = data; 
+            return root; 
+        } 
+        else 
+        { 
+            q.push(temp->right); 
+        } 
+    } 
+    
+    return root; // Return root if no insertion happened
+} 
+
+void bfs(node *head) 
+{ 
+    if (!head) 
+        return; 
+
+    queue<node *> q; 
+    q.push(head); 
+
+    while (!q.empty()) 
+    { 
+        node *currNode = q.front(); 
+        q.pop(); 
+        cout << "\t" << currNode->data; 
+
+        if (currNode->left) 
+            q.push(currNode->left); 
+        if (currNode->right) 
+            q.push(currNode->right); 
+    } 
+} 
+
+int main() 
+{ 
+    node *root = NULL; 
+    int data; 
+    char ans; 
+
+    do 
+    { 
+        cout << "\n Enter the data => "; 
+        cin >> data; 
+
+        root = insert(root, data); 
+
+        cout << "Do you want to insert one or more nodes? (y/n) "; 
+        cin >> ans; 
+
+    } while (ans == 'y' || ans == 'Y'); 
+
+    bfs(root); 
+
+    return 0; 
+}
+
+HPC Lab Assignment No. 01(b)
+—---------------------------------------------------------------------------------------------------------------------------
+Code:
+
+#include <iostream>
+#include <vector>
+#include <stack>
+using namespace std;
+
+const int MAX = 100000;
+vector<int> graph[MAX];
+bool visited[MAX];
+
+void dfs(int node) {
+    stack<int> s;
+    s.push(node);
+
+    while (!s.empty()) {
+        int curr_node = s.top();
+        s.pop();
+
+        if (!visited[curr_node]) {
+            visited[curr_node] = true;
+            for (int i = 0; i < graph[curr_node].size(); i++) {
+                int adj_node = graph[curr_node][i];
+                if (!visited[adj_node]) {
+                    s.push(adj_node);
+                }
+            }
+        }
+    }
+}
+
+int main() {
+    int n, m, start_node;
+    cin >> n >> m >> start_node;
+
+    for (int i = 0; i < m; i++) {
+        int u, v;
+        cin >> u >> v;
+        graph[u].push_back(v);
+        graph[v].push_back(u);
+    }
+
+    for (int i = 0; i < n; i++) {
+        visited[i] = false;
+    }
+
+    dfs(start_node);
+
+    for (int i = 0; i < n; i++) {
+        if (visited[i]) {
+            cout << i << " ";
+        }
+    }
+
+    return 0;
+}
+
+HPC Lab Assignment No.02(a)
+—------------------------------------------------------------------------------------------------------------------
+Code:
+#include <iostream>
+#include <omp.h>
+
+void bubble(int *, int);
+void swap(int &, int &);
+
+void bubble(int *a, int n)
+{
+    bool swapped;
+    for (int i = 0; i < n - 1; i++)
+    {
+        swapped = false;
+        #pragma omp parallel for shared(a, n) reduction(||:swapped)
+        for (int j = 0; j < n - i - 1; j++)
+        {
+            if (a[j] > a[j + 1])
+            {
+                swap(a[j], a[j + 1]);
+                swapped = true;
+            }
+        }
+        if (!swapped)
+            break; // Array is already sorted
+    }
+}
+
+void swap(int &a, int &b)
+{
+    int temp = a;
+    a = b;
+    b = temp;
+}
+
+int main()
+{
+    int *a, n;
+    std::cout << "Enter total number of elements: ";
+    std::cin >> n;
+
+    a = new int[n];
+    std::cout << "Enter elements: ";
+    for (int i = 0; i < n; i++)
+    {
+        std::cin >> a[i];
+    }
+
+    bubble(a, n);
+
+    std::cout << "Sorted array: ";
+    for (int i = 0; i < n; i++)
+    {
+        std::cout << a[i] << " ";
+    }
+    std::cout << std::endl;
+
+    delete[] a; // Deallocate memory
+    return 0;
+}
+
+HPC Lab Assignment No. 02(b)
+—------------------------------------------------------------------------------------------------------------------
+
+Code:
+
+#include <iostream>
+#include <omp.h>
+
+void merge(int arr[], int l, int m, int r) {
+    int i, j, k;
+    int n1 = m - l + 1;
+    int n2 = r - m;
+    int L[n1], R[n2];
+    for (i = 0; i < n1; i++)
+        L[i] = arr[l + i];
+    for (j = 0; j < n2; j++)
+        R[j] = arr[m + 1 + j];
+    i = 0;
+    j = 0;
+    k = l;
+    while (i < n1 && j < n2) {
+        if (L[i] <= R[j]) {
+            arr[k] = L[i];
+            i++;
+        }
+        else {
+            arr[k] = R[j];
+            j++;
+        }
+        k++;
+    }
+    while (i < n1) {
+        arr[k] = L[i];
+        i++;
+        k++;
+    }
+    while (j < n2) {
+        arr[k] = R[j];
+        j++;
+        k++;
+    }
+}
+
+void mergeSort(int arr[], int l, int r) {
+    if (l < r) {
+        int m = l + (r - l) / 2;
+        mergeSort(arr, l, m);
+        mergeSort(arr, m + 1, r);
+        merge(arr, l, m, r);
+    }
+}
+
+int main() {
+    int n;
+    std::cout << "Enter the number of elements: ";
+    std::cin >> n;
+
+    int arr[n];
+    std::cout << "Enter " << n << " elements: ";
+    for (int i = 0; i < n; i++)
+        std::cin >> arr[i];
+
+    std::cout << "Given array is: ";
+    for (int i = 0; i < n; i++)
+        std::cout << arr[i] << " ";
+    std::cout << std::endl;
+
+    double start = omp_get_wtime();
+    mergeSort(arr, 0, n - 1);
+    double stop = omp_get_wtime();
+
+    std::cout << "Sorted array is: ";
+    for (int i = 0; i < n; i++)
+        std::cout << arr[i] << " ";
+    std::cout << std::endl;
+
+    std::cout << "Time taken: " << stop - start << " seconds" << std::endl;
+
+    return 0;
+}
+
+HPC Lab Assignment No. 03
+—------------------------------------------------------------------------------------------------------------------
+
+Code:
+
+#include <iostream>
+#include <omp.h>
+#include <climits> // Include the <climits> header for INT_MAX and INT_MIN
+using namespace std;
+
+void min_reduction(int arr[], int n) {
+    int min_value = INT_MAX; // Use INT_MAX from <climits>
+    #pragma omp parallel for reduction(min: min_value)
+    for (int i = 0; i < n; i++) {
+        if (arr[i] < min_value) {
+            min_value = arr[i];
+        }
+    }
+    cout << "Minimum value: " << min_value << endl;
+}
+
+void max_reduction(int arr[], int n) {
+    int max_value = INT_MIN; // Use INT_MIN from <climits>
+    #pragma omp parallel for reduction(max: max_value)
+    for (int i = 0; i < n; i++) {
+        if (arr[i] > max_value) {
+            max_value = arr[i];
+        }
+    }
+    cout << "Maximum value: " << max_value << endl;
+}
+
+void sum_reduction(int arr[], int n) {
+    int sum = 0;
+    #pragma omp parallel for reduction(+: sum)
+    for (int i = 0; i < n; i++) {
+        sum += arr[i];
+    }
+    cout << "Sum: " << sum << endl;
+}
+
+void average_reduction(int arr[], int n) {
+    int sum = 0;
+    #pragma omp parallel for reduction(+: sum)
+    for (int i = 0; i < n; i++) {
+        sum += arr[i];
+    }
+    cout << "Average: " << (double)sum / n << endl;
+}
+
+int main() {
+    int *arr, n;
+    cout << "Enter total no of elements=>\n";
+    cin >> n;
+    arr = new int[n];
+    cout << "Enter elements=>\n";
+    for (int i = 0; i < n; i++) {
+        cin >> arr[i];
+    }
+
+    min_reduction(arr, n);
+    max_reduction(arr, n);
+    sum_reduction(arr, n);
+    average_reduction(arr, n);
+
+    delete[] arr; // Free the dynamically allocated memory
+
+    return 0;
+}
